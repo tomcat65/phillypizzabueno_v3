@@ -65,7 +65,14 @@ export async function getMenuItemsByCategory(categoryId: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("menu_items")
-    .select("*")
+    .select(
+      `
+      *,
+      base_pizza:base_pizzas (
+        image_url
+      )
+    `
+    )
     .eq("category_id", categoryId)
     .eq("is_available", true)
     .order("display_order");
