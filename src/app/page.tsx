@@ -20,12 +20,12 @@ export default async function HomePage() {
   return (
     <main className="flex min-h-screen flex-col">
       {/* Hero Section */}
-      <section className="relative flex min-h-[50vh] items-center justify-center overflow-hidden bg-gradient-to-b from-black/70 to-black/50 px-4 py-16">
+      <section className="relative flex min-h-[50vh] items-center justify-center overflow-hidden bg-gradient-to-b from-black/30 to-black/20 px-4 py-16">
         <Image
           src="/hero-pizza.jpg"
           alt="Delicious pizza with fresh ingredients"
           fill
-          className="absolute inset-0 -z-10 object-cover opacity-50"
+          className="absolute inset-0 -z-10 object-cover opacity-80"
           priority
         />
         <div className="container relative z-10 mx-auto max-w-5xl text-center">
@@ -77,22 +77,24 @@ export default async function HomePage() {
               key={special.id}
               className="group overflow-hidden transition-all duration-300 hover:shadow-lg"
             >
-              <AspectRatio ratio={16 / 9}>
-                <Image
-                  src="/pizza-placeholder.jpg"
-                  alt={special.name ?? ""}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              </AspectRatio>
-              <CardContent className="p-4">
+              {special.menu_item?.base_pizza?.image_url && (
+                <AspectRatio ratio={16 / 9}>
+                  <Image
+                    src={special.menu_item.base_pizza.image_url}
+                    alt={special.name || ""}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                </AspectRatio>
+              )}
+              <CardContent className="p-6">
                 <h3 className="font-display text-lg font-semibold text-eagles-green">
                   {special.name}
                 </h3>
-                <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">
+                <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                   {special.description}
                 </p>
-                <div className="mt-3 flex items-center justify-between">
+                <div className="mt-4 flex items-center justify-between">
                   <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground">
                       Based on {special.base_item_name}

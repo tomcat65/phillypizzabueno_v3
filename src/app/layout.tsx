@@ -20,7 +20,12 @@ export const metadata = {
   description:
     "Experience authentic Philadelphia-style pizza at PhillyPizzaBueno. Fresh ingredients, traditional recipes, and a taste of Philly in every bite.",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "32x32" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
 };
 
