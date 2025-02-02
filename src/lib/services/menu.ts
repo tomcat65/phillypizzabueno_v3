@@ -107,6 +107,13 @@ export async function getMenuSystemOverview(): Promise<MenuItemWithDetails[]> {
           size:pizza_sizes (*)
         )
       ),
+      wing_type:wing_types (
+        *,
+        variants:wing_variants (
+          *,
+          quantity:wing_quantities (*)
+        )
+      ),
       category:menu_categories (*)
     `
     )
@@ -264,6 +271,9 @@ export const CATEGORY_MAPPING = {
   wings: "Wings",
   sides: "Sides",
   beverages: "Beverages",
+  cheesesteaks: "Cheesesteaks",
+  party_trays: "Party Trays",
+  catering: "Catering",
 } as const;
 
 export type CategorySlug = keyof typeof CATEGORY_MAPPING;
