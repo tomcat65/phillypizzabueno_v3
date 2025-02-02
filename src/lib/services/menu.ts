@@ -2,32 +2,55 @@ import { createClient } from "@/lib/supabase/server";
 import { Database } from "@/types/database.types";
 
 // View Types
-type ActiveCategory = Database["public"]["Views"]["active_categories"]["Row"];
-type MenuOverview = Database["public"]["Views"]["menu_system_overview"]["Row"];
-type PricingOverview =
+export type ActiveCategory =
+  Database["public"]["Views"]["active_categories"]["Row"];
+export type MenuOverview =
+  Database["public"]["Views"]["menu_system_overview"]["Row"];
+export type PricingOverview =
   Database["public"]["Views"]["current_pricing_overview"]["Row"];
-type ActiveSpecial = Database["public"]["Views"]["active_specials"]["Row"];
+export type ActiveSpecial =
+  Database["public"]["Views"]["active_specials"]["Row"];
 
 // Table Types
-type MenuItem = Database["public"]["Tables"]["menu_items"]["Row"];
-type BasePizza = Database["public"]["Tables"]["base_pizzas"]["Row"];
-type PizzaSize = Database["public"]["Tables"]["pizza_sizes"]["Row"];
-type PizzaVariant = Database["public"]["Tables"]["pizza_variants"]["Row"];
-type Topping = Database["public"]["Tables"]["toppings"]["Row"];
-type WingType = Database["public"]["Tables"]["wing_types"]["Row"];
-type WingVariant = Database["public"]["Tables"]["wing_variants"]["Row"];
-type WingQuantity = Database["public"]["Tables"]["wing_quantities"]["Row"];
-type WingSauce = Database["public"]["Tables"]["wing_sauces"]["Row"];
-type SideDish = Database["public"]["Tables"]["side_dishes"]["Row"];
-type Beverage = Database["public"]["Tables"]["beverages"]["Row"];
+export type MenuItem = Database["public"]["Tables"]["menu_items"]["Row"];
+export type BasePizza = Database["public"]["Tables"]["base_pizzas"]["Row"];
+export type PizzaSize = {
+  id: string;
+  size_inches: number;
+  size_name: string;
+  price_modifier: number;
+  created_at: string | null;
+};
+export type PizzaVariant = {
+  id: string;
+  base_pizza_id: string;
+  size_id: string;
+  base_price: number;
+  created_at: string | null;
+  created_by: string | null;
+  modified_at: string | null;
+  modified_by: string | null;
+};
+export type Topping = Database["public"]["Tables"]["toppings"]["Row"];
+export type WingType = Database["public"]["Tables"]["wing_types"]["Row"];
+export type WingVariant = Database["public"]["Tables"]["wing_variants"]["Row"];
+export type WingQuantity =
+  Database["public"]["Tables"]["wing_quantities"]["Row"];
+export type WingSauce = Database["public"]["Tables"]["wing_sauces"]["Row"];
+export type SideDish = Database["public"]["Tables"]["side_dishes"]["Row"];
+export type Beverage = Database["public"]["Tables"]["beverages"]["Row"];
 
 // Extended Types for API Responses
-interface MenuItemWithDetails extends MenuItem {
-  base_pizza?: BasePizza;
+export interface MenuItemWithDetails extends MenuItem {
+  base_pizza?: BasePizza & {
+    variants: (PizzaVariant & {
+      size: PizzaSize;
+    })[];
+  };
   category: ActiveCategory;
 }
 
-interface PizzaWithDetails extends BasePizza {
+export interface PizzaWithDetails extends BasePizza {
   variants: (PizzaVariant & {
     size: PizzaSize;
     toppings: Topping[];
@@ -49,6 +72,13 @@ interface BeverageWithDetails extends Beverage {
   menu_item: MenuItem;
 }
 
+export class MenuServiceError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = "MenuServiceError";
+  }
+}
+
 export async function getActiveCategories(): Promise<ActiveCategory[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -57,11 +87,10 @@ export async function getActiveCategories(): Promise<ActiveCategory[]> {
     .order("display_order");
 
   if (error) {
-    console.error("Error fetching categories:", error);
-    return [];
+    throw new MenuServiceError("Failed to fetch active categories", error);
   }
 
-  return data;
+  return data ?? [];
 }
 
 export async function getMenuSystemOverview(): Promise<MenuItemWithDetails[]> {
@@ -71,7 +100,13 @@ export async function getMenuSystemOverview(): Promise<MenuItemWithDetails[]> {
     .select(
       `
       *,
-      base_pizza:base_pizzas (*),
+      base_pizza:base_pizzas (
+        *,
+        variants:pizza_variants (
+          *,
+          size:pizza_sizes (*)
+        )
+      ),
       category:menu_categories (*)
     `
     )
@@ -79,11 +114,10 @@ export async function getMenuSystemOverview(): Promise<MenuItemWithDetails[]> {
     .order("display_order");
 
   if (error) {
-    console.error("Error fetching menu overview:", error);
-    return [];
+    throw new MenuServiceError("Failed to fetch menu system overview", error);
   }
 
-  return data as MenuItemWithDetails[];
+  return data ?? [];
 }
 
 export async function getCurrentPricingOverview(): Promise<PricingOverview[]> {
@@ -91,11 +125,13 @@ export async function getCurrentPricingOverview(): Promise<PricingOverview[]> {
   const { data, error } = await supabase.rpc("get_current_pricing_overview");
 
   if (error) {
-    console.error("Error fetching pricing overview:", error);
-    return [];
+    throw new MenuServiceError(
+      "Failed to fetch current pricing overview",
+      error
+    );
   }
 
-  return data;
+  return data ?? [];
 }
 
 export async function getActiveSpecials(): Promise<ActiveSpecial[]> {
@@ -220,4 +256,26 @@ export async function getBeverages(): Promise<BeverageWithDetails[]> {
   }
 
   return data as BeverageWithDetails[];
+}
+
+// Category mapping utilities
+export const CATEGORY_MAPPING = {
+  pizzas: "Pizzas",
+  wings: "Wings",
+  sides: "Sides",
+  beverages: "Beverages",
+} as const;
+
+export type CategorySlug = keyof typeof CATEGORY_MAPPING;
+
+export function getCategoryBySlug(slug: string): string | null {
+  return CATEGORY_MAPPING[slug as CategorySlug] || null;
+}
+
+export function getSlugByCategory(category: string): string {
+  return (
+    Object.entries(CATEGORY_MAPPING).find(
+      ([_, value]) => value === category
+    )?.[0] || ""
+  );
 }
