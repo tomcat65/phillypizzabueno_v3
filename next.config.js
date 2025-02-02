@@ -12,8 +12,6 @@ const nextConfig = {
       },
     ],
   },
-  // Remove Vercel analytics
-  analyticsId: undefined,
 };
 
 module.exports = nextConfig;
